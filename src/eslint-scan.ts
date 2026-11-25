@@ -4,9 +4,24 @@ import security from "eslint-plugin-security";
 import noUnsanitized from "eslint-plugin-no-unsanitized";
 import { relative } from "node:path";
 import { fingerprint } from "./sarif.js";
+import { sicherheitsPlugin } from "./regeln.js";
 import type { Finding } from "./types.js";
 
-const IGNORIERT = ["**/node_modules/**", "**/dist/**", "**/build/**", "**/coverage/**"];
+/**
+ * Pfade, die nicht geprüft werden:
+ * - Build-Ausgaben und Abhängigkeiten
+ * - minifizierte Dateien
+ * - Dritt-Bibliotheken (vendor, assets/private), die nicht zum Projekt gehören
+ */
+const IGNORIERT = [
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/coverage/**",
+  "**/*.min.js",
+  "**/vendor/**",
+  "**/assets/private/**",
+];
 
 /**
  * Regeln, die in TypeScript-Projekten vor allem Fehlalarme erzeugen.
@@ -32,16 +47,23 @@ export function buildConfig(): Linter.Config[] {
       plugins: {
         security,
         "no-unsanitized": noUnsanitized,
+        sicherheit: sicherheitsPlugin,
       },
       rules: {
         ...sicherheitsRegeln,
         ...LAERM_REGELN,
         "no-unsanitized/method": "error",
         "no-unsanitized/property": "error",
+        "sicherheit/sql-injection": "error",
+        "sicherheit/xss-dom": "error",
+        "sicherheit/xss-reflected": "error",
       },
     },
   ];
 }
+
+/** Meldung, die entsteht, wenn eine eslint-disable-Zeile auf eine nicht geladene Regel verweist. */
+const KONFIG_FEHLER = /Definition for rule '.+' was not found/;
 
 /** Wandelt ESLint-Ergebnisse in normalisierte Befunde um. Reine Funktion, daher testbar. */
 export function eslintResultsToFindings(results: ESLint.LintResult[], dir: string): Finding[] {
@@ -52,6 +74,8 @@ export function eslintResultsToFindings(results: ESLint.LintResult[], dir: strin
     for (const m of r.messages) {
       // Meldungen ohne Regel-ID sind Syntaxfehler und keine Sicherheitsbefunde.
       if (!m.ruleId) continue;
+      // Fehler in der Konfiguration der geprüften Datei sind keine Ergebnisse.
+      if (KONFIG_FEHLER.test(m.message)) continue;
 
       befunde.push({
         id: "",

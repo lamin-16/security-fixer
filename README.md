@@ -213,6 +213,11 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.4.1
+- Neue Regeln für SQL-Injection (`sicherheit/sql-injection`) und XSS (`sicherheit/xss-dom`, `sicherheit/xss-reflected`).
+- Konfigurationsfehler von ESLint erscheinen nicht mehr als Sicherheitsbefunde.
+- Minifizierte Dateien und Dritt-Bibliotheken (`vendor`, `assets/private`) werden standardmäßig nicht geprüft.
+
 ### 0.4.0
 - Neuer Haupt-Scanner: ESLint mit Sicherheitsregeln. Er läuft vollständig in Node.js und braucht keinen Build auf dem Gerät.
 - Semgrep ist optional. Fehlt es, steht ein Hinweis im Bericht.

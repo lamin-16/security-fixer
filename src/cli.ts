@@ -29,7 +29,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.4.0
+  console.log(`Sicherheitsfixer 0.4.1
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
