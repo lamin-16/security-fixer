@@ -155,6 +155,51 @@ Jeder Eintrag braucht ein `muster` (Glob) und einen `grund`. Ohne Begründung br
 Der Scanner `eslint` prüft TypeScript- und JavaScript-Dateien auf typische Schwachstellen, etwa unsichere Dateipfade, dynamische Ausführung und unsichere DOM-Zuweisungen. Er ergänzt Semgrep und ersetzt es nicht.
 
 
+## Erweiterte Nutzung
+
+### Architektur
+
+```mermaid
+flowchart LR
+  classDef repo fill:#1a1a1a,stroke:#D4AF37,color:#F6D365
+  classDef scan fill:#0b3d2e,stroke:#2ecc71,color:#d8ffe9
+  classDef ai fill:#2b1d4a,stroke:#b58cff,color:#f1e9ff
+  classDef gate fill:#3d2b00,stroke:#D4AF37,color:#fff3c4
+  classDef done fill:#0b2a3d,stroke:#4fc3f7,color:#e1f5ff
+  R["📁 Repository"]:::repo --> S["🔍 Scan<br/>Semgrep · ESLint · npm audit · Gitleaks"]:::scan
+  S --> T["🧹 Triage<br/>Zusammenführen · Filtern"]:::scan
+  T --> A["🤖 Fixer"]:::ai
+  A --> REV["🧐 Reviewer"]:::ai
+  REV --> V{"✅ Verifier<br/>Befund weg · Typen · Tests"}:::gate
+  V --> B["🌿 Branch"]:::done
+  B --> C["📝 Commit nur nach Freigabe"]:::gate
+```
+
+### Exit-Code für CI
+
+```bash
+node dist/cli.js scan . --fehler-ab high
+```
+Der Befehl endet mit Code `1`, wenn ein Befund mit Schwere „high“ oder höher vorliegt. So bricht eine Pipeline bei ernsten Befunden ab.
+
+### JSON-Ausgabe
+
+```bash
+node dist/cli.js scan . --json befunde.json
+```
+
+### Befunde im Code unterdrücken
+
+Schreiben Sie eine Begründung direkt über die betroffene Zeile:
+
+```ts
+// sicherheitsfixer-ignore: sicherheit/sql-injection -- Eingabe wird vorher über eine Whitelist geprüft
+db.query(`SELECT * FROM ${tabelle}`);
+```
+
+Ohne `-- Begründung` wirkt die Unterdrückung nicht. Mit `*` statt einer Regel unterdrückt sie alle Befunde der Zeile.
+
+
 ## Konfiguration
 
 | Option / Variable | Standard | Wirkung |
@@ -219,6 +264,12 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 [MIT](LICENSE)
 
 ## Changelog
+
+### 0.6.0
+- Exit-Code bei Schwelle mit `--fehler-ab <stufe>`: Ein CI-Lauf schlägt fehl, wenn Befunde ab dieser Schwere vorliegen.
+- JSON-Ausgabe mit `--json <datei>`.
+- Befunde lassen sich mit `// sicherheitsfixer-ignore: <regel> -- <begründung>` unterdrücken. Die Begründung ist Pflicht.
+- Farbiges Architekturdiagramm in der README.
 
 ### 0.5.0
 - Neuer Ausgabeformat SARIF 2.1.0 (`--sarif <datei>`). Befunde erscheinen im Tab „Security“ des Repositories über GitHub Code Scanning.

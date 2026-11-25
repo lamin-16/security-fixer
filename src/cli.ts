@@ -30,7 +30,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.5.0
+  console.log(`Sicherheitsfixer 0.6.0
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -40,6 +40,8 @@ Optionen:
   --min <stufe>            critical | high | medium | low | info (Standard: low)
   --bericht <datei>        Bericht in eine Datei schreiben (nur scan)
   --sarif <datei>          Befunde als SARIF 2.1.0 schreiben (nur scan)
+  --json <datei>           Befunde als JSON schreiben (nur scan)
+  --fehler-ab <stufe>      Exit-Code 1, wenn Befunde ab dieser Stufe vorliegen (nur scan)
   --max <zahl>             Maximale Anzahl Korrekturen (nur fix, Standard: 5)
   --modell <name>          Modell für Korrekturen (nur fix)
   --semgrep-config <cfg>   Semgrep-Regelsatz (Standard: p/typescript)
@@ -56,9 +58,15 @@ async function scanLauf(repo: string): Promise<void> {
   const findings = triage(roh, MIN);
   await audit({ aktion: "scan", repo, befunde: findings.length });
 
+  const jsonDatei = option("--json");
+  if (jsonDatei) {
+    await writeFile(jsonDatei, JSON.stringify(findings, null, 2), "utf8");
+    console.log(`JSON geschrieben: ${jsonDatei}`);
+  }
+
   const sarifDatei = option("--sarif");
   if (sarifDatei) {
-    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.5.0"), null, 2), "utf8");
+    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.6.0"), null, 2), "utf8");
     console.log(`SARIF geschrieben: ${sarifDatei}`);
   }
 
@@ -69,6 +77,18 @@ async function scanLauf(repo: string): Promise<void> {
     console.log(`Bericht geschrieben: ${datei}`);
   } else {
     console.log(bericht);
+  }
+
+  const grenze = option("--fehler-ab");
+  if (grenze) {
+    const rang: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+    if (!(grenze in rang)) {
+      throw new Error(`Unbekannte Stufe für --fehler-ab: ${grenze}`);
+    }
+    if (findings.some((f) => rang[f.severity] <= rang[grenze])) {
+      console.error(`Schwelle erreicht: Befunde mit Schwere ${grenze} oder höher vorhanden.`);
+      process.exitCode = 1;
+    }
   }
 }
 

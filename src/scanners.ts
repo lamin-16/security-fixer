@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { runEslint } from "./eslint-scan.js";
 import { CONFIG_DATEI, filterExcluded, loadAusschluss } from "./config.js";
 import { fingerprint, parseSarif } from "./sarif.js";
+import { filterInline } from "./suppress.js";
 import type { Finding, Severity } from "./types.js";
 
 export interface ScanResult {
@@ -114,9 +115,14 @@ export async function scanAll(dir: string, semgrepConfig: string): Promise<ScanR
   }
 
   const regeln = await loadAusschluss(dir);
-  const { behalten, ausgeschlossen } = filterExcluded(findings, regeln);
+  const { behalten: ohneAusschluss, ausgeschlossen } = filterExcluded(findings, regeln);
   if (ausgeschlossen > 0) {
     warnings.push(`${ausgeschlossen} Befunde durch ${CONFIG_DATEI} ausgeschlossen`);
+  }
+
+  const { behalten, unterdrueckt } = await filterInline(ohneAusschluss, dir);
+  if (unterdrueckt > 0) {
+    warnings.push(`${unterdrueckt} Befunde durch Kommentar "sicherheitsfixer-ignore" unterdrückt`);
   }
 
   return { findings: behalten, warnings };
