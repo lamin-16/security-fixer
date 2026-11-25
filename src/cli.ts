@@ -1,0 +1,154 @@
+#!/usr/bin/env node
+import { readFile, writeFile } from "node:fs/promises";
+import { createInterface } from "node:readline/promises";
+import { assertCleanTree, assertRepo, safeFilePath } from "./guard.js";
+import { audit } from "./audit.js";
+import { createBranch, commitFiles, diffStat } from "./git.js";
+import { proposeFix } from "./fixer.js";
+import { berichtAlsMarkdown } from "./report.js";
+import { scanAll } from "./scanners.js";
+import { triage } from "./triage.js";
+import { verifyFix } from "./verify.js";
+import type { Finding, Severity } from "./types.js";
+
+const args = process.argv.slice(2);
+const befehl = args[0];
+const ziel = args[1];
+
+function option(name: string, standard?: string): string | undefined {
+  const i = args.indexOf(name);
+  return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : standard;
+}
+
+const SEMGREP_CONFIG = option("--semgrep-config", "p/typescript")!;
+const MODELL = option("--modell", "claude-sonnet-5-5")!;
+const MAX = Number(option("--max", "5"));
+const MIN = (option("--min", "low") as Severity);
+
+function hilfe(): void {
+  console.log(`Sicherheitsfixer
+
+Befehle:
+  scan <repo>   Scannt ein Repository und erstellt einen Bericht
+  fix  <repo>   Schlägt Korrekturen vor, prüft sie und legt sie in einem Branch ab
+
+Optionen:
+  --min <stufe>            critical | high | medium | low | info (Standard: low)
+  --bericht <datei>        Bericht in eine Datei schreiben (nur scan)
+  --max <zahl>             Maximale Anzahl Korrekturen (nur fix, Standard: 5)
+  --modell <name>          Modell für Korrekturen (nur fix)
+  --semgrep-config <cfg>   Semgrep-Regelsatz (Standard: p/typescript)
+  --commit                 Nach Prüfung und Bestätigung committen (nur fix)
+
+Umgebung:
+  ANTHROPIC_API_KEY        Erforderlich für fix`);
+}
+
+async function scanLauf(repo: string): Promise<void> {
+  const { findings: roh, warnings } = await scanAll(repo, SEMGREP_CONFIG);
+  const findings = triage(roh, MIN);
+  await audit({ aktion: "scan", repo, befunde: findings.length });
+
+  const bericht = berichtAlsMarkdown(findings, warnings, new Date());
+  const datei = option("--bericht");
+  if (datei) {
+    await writeFile(datei, bericht, "utf8");
+    console.log(`Bericht geschrieben: ${datei}`);
+  } else {
+    console.log(bericht);
+  }
+}
+
+async function fixLauf(repo: string): Promise<void> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error("ANTHROPIC_API_KEY ist nicht gesetzt.");
+
+  await assertCleanTree(repo);
+
+  const { findings: roh } = await scanAll(repo, SEMGREP_CONFIG);
+  const kandidaten: Finding[] = triage(roh, MIN)
+    .filter((f) => f.source === "semgrep" && f.file)
+    .slice(0, MAX);
+
+  if (kandidaten.length === 0) {
+    console.log("Keine automatisch korrigierbaren Befunde. Automatisch korrigiert werden nur Semgrep-Befunde mit Datei.");
+    return;
+  }
+
+  const branch = `sicherheitsfixer/${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`;
+  await createBranch(repo, branch);
+
+  const angewendet: { finding: Finding; file: string; erklaerung: string }[] = [];
+
+  for (const f of kandidaten) {
+    const pfad = safeFilePath(repo, f.file!);
+    const original = await readFile(pfad, "utf8").catch(() => null);
+    if (original === null) continue;
+
+    const vorschlag = await proposeFix(f, original, { apiKey: key, model: MODELL });
+    if (!vorschlag) {
+      await audit({ aktion: "kein-vorschlag", befund: f.rule, datei: f.file });
+      continue;
+    }
+
+    await writeFile(pfad, vorschlag.newContent, "utf8");
+    const urteil = await verifyFix(repo, f, SEMGREP_CONFIG);
+    await audit({ aktion: "pruefung", befund: f.rule, datei: f.file, bestanden: urteil.ok, gruende: urteil.reasons });
+
+    if (urteil.ok) {
+      angewendet.push({ finding: f, file: f.file!, erklaerung: vorschlag.explanation });
+      console.log(`✅ ${f.id} ${f.rule} in ${f.file}`);
+    } else {
+      await writeFile(pfad, original, "utf8");
+      console.log(`❌ ${f.id} verworfen: ${urteil.reasons.join(", ")}`);
+    }
+  }
+
+  if (angewendet.length === 0) {
+    console.log("Keine Korrektur hat die Prüfung bestanden. Der Branch bleibt unverändert.");
+    return;
+  }
+
+  console.log("\nÄnderungen:");
+  console.log(await diffStat(repo));
+  console.log("Erklärungen:");
+  for (const a of angewendet) console.log(`- ${a.finding.id}: ${a.erklaerung}`);
+
+  if (!args.includes("--commit")) {
+    console.log(`\nDie Änderungen liegen im Branch ${branch}. Prüfen mit "git diff", committen mit --commit.`);
+    return;
+  }
+
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const antwort = await rl.question(`\n${angewendet.length} Korrekturen committen? (ja/nein) `);
+  rl.close();
+
+  if (antwort.trim().toLowerCase() !== "ja") {
+    console.log(`Abgebrochen. Die Änderungen bleiben unkommittiert im Branch ${branch}.`);
+    return;
+  }
+
+  const dateien = [...new Set(angewendet.map((a) => a.file))];
+  await commitFiles(repo, dateien, `fix: ${angewendet.length} Sicherheitsbefunde behoben (automatisch vorgeschlagen, geprüft)`);
+  await audit({ aktion: "commit", branch, dateien });
+  console.log(`Commit im Branch ${branch} erstellt.`);
+}
+
+async function main(): Promise<void> {
+  if (!befehl || befehl === "--hilfe" || !ziel) {
+    hilfe();
+    return;
+  }
+
+  const repo = await assertRepo(ziel);
+
+  if (befehl === "scan") return scanLauf(repo);
+  if (befehl === "fix") return fixLauf(repo);
+
+  hilfe();
+}
+
+main().catch((e: Error) => {
+  console.error(`Fehler: ${e.message}`);
+  process.exit(1);
+});
