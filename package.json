@@ -1,6 +1,6 @@
 {
   "name": "sicherheitsfixer",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Findet Sicherheitslücken in TypeScript-Projekten und schlägt geprüfte Korrekturen vor.",
   "type": "module",
   "bin": { "sicherheitsfixer": "dist/cli.js" },

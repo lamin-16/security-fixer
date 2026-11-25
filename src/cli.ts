@@ -7,6 +7,7 @@ import { createBranch, commitFiles, diffStat } from "./git.js";
 import { proposeFix } from "./fixer.js";
 import { reviewProposal } from "./agents.js";
 import { berichtAlsMarkdown } from "./report.js";
+import { berichtAlsSarif } from "./sarif-export.js";
 import { scanAll } from "./scanners.js";
 import { triage } from "./triage.js";
 import { countSame, verifyFix } from "./verify.js";
@@ -29,7 +30,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.4.2
+  console.log(`Sicherheitsfixer 0.5.0
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -38,6 +39,7 @@ Befehle:
 Optionen:
   --min <stufe>            critical | high | medium | low | info (Standard: low)
   --bericht <datei>        Bericht in eine Datei schreiben (nur scan)
+  --sarif <datei>          Befunde als SARIF 2.1.0 schreiben (nur scan)
   --max <zahl>             Maximale Anzahl Korrekturen (nur fix, Standard: 5)
   --modell <name>          Modell für Korrekturen (nur fix)
   --semgrep-config <cfg>   Semgrep-Regelsatz (Standard: p/typescript)
@@ -53,6 +55,12 @@ async function scanLauf(repo: string): Promise<void> {
   const { findings: roh, warnings } = await scanAll(repo, SEMGREP_CONFIG);
   const findings = triage(roh, MIN);
   await audit({ aktion: "scan", repo, befunde: findings.length });
+
+  const sarifDatei = option("--sarif");
+  if (sarifDatei) {
+    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.5.0"), null, 2), "utf8");
+    console.log(`SARIF geschrieben: ${sarifDatei}`);
+  }
 
   const bericht = berichtAlsMarkdown(findings, warnings, new Date());
   const datei = option("--bericht");

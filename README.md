@@ -1,11 +1,18 @@
-# 🛡️ Sicherheitsfixer
+<p align="center">
+  <img src="assets/banner.svg" alt="Sicherheitsfixer" width="100%" />
+</p>
 
-**Findet Sicherheitslücken in TypeScript-Projekten und schlägt geprüfte Korrekturen vor. Ohne Ihre Zustimmung wird nichts committet.**
+<h1 align="center">🛡️ Sicherheitsfixer</h1>
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A5%2020-339933?logo=node.js&logoColor=white)
-![Lizenz](https://img.shields.io/badge/Lizenz-MIT-green)
-![Status](https://img.shields.io/badge/Status-Prototyp-orange)
+<p align="center">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-D4AF37?style=for-the-badge&logo=typescript&logoColor=0b0b0b&labelColor=0b0b0b">
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-%E2%89%A5%2020-D4AF37?style=for-the-badge&logo=nodedotjs&logoColor=0b0b0b&labelColor=0b0b0b">
+  <img alt="Lizenz" src="https://img.shields.io/badge/Lizenz-MIT-D4AF37?style=for-the-badge&labelColor=0b0b0b">
+  <img alt="Status" src="https://img.shields.io/badge/Status-Prototyp-D4AF37?style=for-the-badge&labelColor=0b0b0b">
+  <img alt="SARIF" src="https://img.shields.io/badge/SARIF-2.1.0-D4AF37?style=for-the-badge&labelColor=0b0b0b">
+</p>
+
+<p align="center"><b>Findet Sicherheitslücken in TypeScript-Projekten und schlägt geprüfte Korrekturen vor. Ohne Ihre Zustimmung wird nichts committet.</b></p>
 
 ---
 
@@ -212,6 +219,11 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 [MIT](LICENSE)
 
 ## Changelog
+
+### 0.5.0
+- Neuer Ausgabeformat SARIF 2.1.0 (`--sarif <datei>`). Befunde erscheinen im Tab „Security“ des Repositories über GitHub Code Scanning.
+- Neuer CI-Workflow `sicherheitsscan.yml`: führt Semgrep und ESLint aus, lädt den Bericht als Artefakt hoch und meldet die Ergebnisse an GitHub.
+- Neues goldenes Design für die README mit Banner und Abzeichen.
 
 ### 0.4.2
 - Mehrfachmeldungen derselben Stelle aus verschiedenen ESLint-Regeln erscheinen als ein Befund, mit allen Regeln aufgelistet.

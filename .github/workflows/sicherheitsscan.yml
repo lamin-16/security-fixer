@@ -1,0 +1,53 @@
+name: Sicherheitsscan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Semgrep installieren
+        run: pip install semgrep
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Bauen
+        run: npm run build
+
+      - name: Sicherheitsscan
+        run: node dist/cli.js scan . --sarif ergebnis.sarif --bericht bericht.md
+
+      - name: Bericht als Artefakt speichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: sicherheitsbericht
+          path: |
+            bericht.md
+            ergebnis.sarif
+
+      - name: In GitHub Code Scanning hochladen
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ergebnis.sarif
