@@ -69,7 +69,7 @@ flowchart LR
 - Ein API-Schlüssel für `fix`
 
 ```bash
-git clone https://github.com/lamin-16/sicherheitsfixer.git
+git clone https://github.com/IHR-NAME/sicherheitsfixer.git
 cd sicherheitsfixer
 npm install
 npm run build
