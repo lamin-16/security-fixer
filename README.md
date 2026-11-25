@@ -101,6 +101,22 @@ Das Ergebnis liegt in einem neuen Branch `sicherheitsfixer/...`. Prüfen Sie die
 node dist/cli.js fix ./mein-projekt --commit
 ```
 
+## Agenten-Modus
+
+Mit `--agenten` prüft ein zweiter, unabhängiger Agent jede Korrektur, bevor sie angewendet wird.
+
+```bash
+node dist/cli.js fix ./mein-projekt --agenten
+```
+
+Die Pipeline besteht aus drei Stufen:
+
+1. **Fixer** schlägt eine minimale Korrektur vor.
+2. **Reviewer** prüft sie kritisch und lehnt sie im Zweifel ab. Ein Fehler oder eine unklare Antwort gilt als Ablehnung.
+3. **Verifier** führt die deterministische Prüfung aus: Befund-Zählung, TypeScript und Tests. Das letzte Wort hat immer der Verifier.
+
+Jede Entscheidung aller drei Stufen steht im Protokoll.
+
 ## Sicherheitsgrenzen
 
 Dieses Tool ist bewusst eingeschränkt. Diese Grenzen sind Teil der Konstruktion und nicht optional.
@@ -178,6 +194,10 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 [MIT](LICENSE)
 
 ## Changelog
+
+### 0.3.0
+- Agenten-Modus mit `--agenten`: unabhängiger Reviewer prüft jede Korrektur.
+- Fail-closed: Fehler oder unklare Antworten gelten als Ablehnung.
 
 ### 0.2.0
 - Mehrere Vorkommen derselben Regel in einer Datei können jetzt nacheinander korrigiert werden.

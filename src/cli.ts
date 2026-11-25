@@ -5,6 +5,7 @@ import { assertCleanTree, assertRepo, safeFilePath } from "./guard.js";
 import { audit } from "./audit.js";
 import { createBranch, commitFiles, diffStat } from "./git.js";
 import { proposeFix } from "./fixer.js";
+import { reviewProposal } from "./agents.js";
 import { berichtAlsMarkdown } from "./report.js";
 import { scanAll } from "./scanners.js";
 import { triage } from "./triage.js";
@@ -25,9 +26,10 @@ const MODELL = option("--modell", "claude-sonnet-5-5")!;
 const MAX = Number(option("--max", "5"));
 const MIN = option("--min", "low") as Severity;
 const TROCKEN = args.includes("--trocken");
+const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.2.0
+  console.log(`Sicherheitsfixer 0.3.0
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -40,6 +42,7 @@ Optionen:
   --modell <name>          Modell für Korrekturen (nur fix)
   --semgrep-config <cfg>   Semgrep-Regelsatz (Standard: p/typescript)
   --trocken                Korrekturen nur prüfen, nichts speichern (nur fix)
+  --agenten                Unabhängiger Reviewer prüft jede Korrektur (nur fix)
   --commit                 Nach Prüfung und Bestätigung committen (nur fix)
 
 Umgebung:
@@ -95,6 +98,15 @@ async function fixLauf(repo: string): Promise<void> {
       await audit({ aktion: "kein-vorschlag", befund: f.rule, datei: f.file });
       console.log(`– ${f.id} ${f.rule}: kein sicherer Vorschlag`);
       continue;
+    }
+
+    if (AGENTEN) {
+      const pruefung = await reviewProposal(f, original, vorschlag.newContent, { apiKey: key, model: MODELL });
+      await audit({ aktion: "reviewer", befund: f.rule, datei: f.file, genehmigt: pruefung.approved, grund: pruefung.reason });
+      if (!pruefung.approved) {
+        console.log(`↩️ ${f.id} vom Reviewer abgelehnt: ${pruefung.reason}`);
+        continue;
+      }
     }
 
     const vorherAnzahl = countSame(roh, f);
