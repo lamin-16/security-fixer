@@ -265,6 +265,10 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.7.0
+- Neuer Befehl `benchmark`: misst Trefferquote und Präzision gegen eine Liste bekannter Schwachstellen.
+- Mit einer kleinen Wahrheitsliste sind die Zahlen nicht aussagekräftig. Die Liste muss vollständig geprüft werden.
+
 ### 0.6.0
 - Exit-Code bei Schwelle mit `--fehler-ab <stufe>`: Ein CI-Lauf schlägt fehl, wenn Befunde ab dieser Schwere vorliegen.
 - JSON-Ausgabe mit `--json <datei>`.

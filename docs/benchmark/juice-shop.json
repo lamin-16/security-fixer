@@ -1,0 +1,14 @@
+[
+  {
+    "id": "JS-SQL-LOGIN",
+    "file": "routes/login.ts",
+    "kategorie": "sql",
+    "beschreibung": "SQL-Injection im Login (Datei geprüft, Zeile nicht festgelegt)"
+  },
+  {
+    "id": "JS-SQL-SEARCH",
+    "file": "routes/search.ts",
+    "kategorie": "sql",
+    "beschreibung": "SQL-Injection in der Produktsuche (Datei geprüft, Zeile nicht festgelegt)"
+  }
+]

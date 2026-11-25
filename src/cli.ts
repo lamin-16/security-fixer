@@ -8,6 +8,7 @@ import { proposeFix } from "./fixer.js";
 import { reviewProposal } from "./agents.js";
 import { berichtAlsMarkdown } from "./report.js";
 import { berichtAlsSarif } from "./sarif-export.js";
+import { bewerte, berichtBenchmark, type Wahrheit } from "./benchmark.js";
 import { scanAll } from "./scanners.js";
 import { triage } from "./triage.js";
 import { countSame, verifyFix } from "./verify.js";
@@ -30,7 +31,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.6.0
+  console.log(`Sicherheitsfixer 0.7.0
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -66,7 +67,7 @@ async function scanLauf(repo: string): Promise<void> {
 
   const sarifDatei = option("--sarif");
   if (sarifDatei) {
-    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.6.0"), null, 2), "utf8");
+    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.7.0"), null, 2), "utf8");
     console.log(`SARIF geschrieben: ${sarifDatei}`);
   }
 
@@ -190,6 +191,18 @@ async function fixLauf(repo: string): Promise<void> {
   console.log(`Commit im Branch ${branch} erstellt.`);
 }
 
+async function benchmarkLauf(repo: string): Promise<void> {
+  const wahrheitDatei = option("--wahrheit");
+  if (!wahrheitDatei) throw new Error("Bitte --wahrheit <datei> angeben.");
+
+  const wahrheit = JSON.parse(await readFile(wahrheitDatei, "utf8")) as Wahrheit[];
+  if (!Array.isArray(wahrheit)) throw new Error("Die Wahrheitsdatei muss eine Liste sein.");
+
+  const { findings: roh } = await scanAll(repo, SEMGREP_CONFIG);
+  const findings = triage(roh, "low");
+  console.log(berichtBenchmark(bewerte(findings, wahrheit), new Date()));
+}
+
 async function main(): Promise<void> {
   if (!befehl || befehl === "--hilfe" || !ziel) {
     hilfe();
@@ -200,6 +213,7 @@ async function main(): Promise<void> {
 
   if (befehl === "scan") return scanLauf(repo);
   if (befehl === "fix") return fixLauf(repo);
+  if (befehl === "benchmark") return benchmarkLauf(repo);
 
   hilfe();
 }
