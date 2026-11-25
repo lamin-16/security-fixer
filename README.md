@@ -69,8 +69,8 @@ flowchart LR
 - Ein API-Schlüssel für `fix`
 
 ```bash
-git clone https://github.com/IHR-NAME/sicherheitsfixer.git
-cd sicherheitsfixer
+git clone https://github.com/lamin-16/security-fixer.git
+cd security-fixer
 npm install
 npm run build
 npm test
@@ -166,7 +166,7 @@ src/
 - [ ] Zeilenunabhängige Befund-Erkennung, damit Verschiebungen nach einer Korrektur sauber verfolgt werden
 - [ ] Unterstützung für Python-Projekte
 - [ ] HTML-Bericht mit Filtern
-- [ ] Testlauf ohne Änderungen (`--trocken`)
+- [x] Testlauf ohne Änderungen (`--trocken`)
 - [ ] Eigene Regeln als Datei einbinden
 
 ## Mitwirken
@@ -176,3 +176,11 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 ## Lizenz
 
 [MIT](LICENSE)
+
+## Changelog
+
+### 0.2.0
+- Mehrere Vorkommen derselben Regel in einer Datei können jetzt nacheinander korrigiert werden.
+- Neuer Trockenlauf mit `--trocken`.
+- GitHub-Actions-Workflow für Build und Tests.
+- Klon-Link in der Dokumentation korrigiert.

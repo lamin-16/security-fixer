@@ -8,7 +8,7 @@ import { proposeFix } from "./fixer.js";
 import { berichtAlsMarkdown } from "./report.js";
 import { scanAll } from "./scanners.js";
 import { triage } from "./triage.js";
-import { verifyFix } from "./verify.js";
+import { countSame, verifyFix } from "./verify.js";
 import type { Finding, Severity } from "./types.js";
 
 const args = process.argv.slice(2);
@@ -23,10 +23,11 @@ function option(name: string, standard?: string): string | undefined {
 const SEMGREP_CONFIG = option("--semgrep-config", "p/typescript")!;
 const MODELL = option("--modell", "claude-sonnet-5-5")!;
 const MAX = Number(option("--max", "5"));
-const MIN = (option("--min", "low") as Severity);
+const MIN = option("--min", "low") as Severity;
+const TROCKEN = args.includes("--trocken");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer
+  console.log(`Sicherheitsfixer 0.2.0
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -38,6 +39,7 @@ Optionen:
   --max <zahl>             Maximale Anzahl Korrekturen (nur fix, Standard: 5)
   --modell <name>          Modell für Korrekturen (nur fix)
   --semgrep-config <cfg>   Semgrep-Regelsatz (Standard: p/typescript)
+  --trocken                Korrekturen nur prüfen, nichts speichern (nur fix)
   --commit                 Nach Prüfung und Bestätigung committen (nur fix)
 
 Umgebung:
@@ -75,8 +77,11 @@ async function fixLauf(repo: string): Promise<void> {
     return;
   }
 
-  const branch = `sicherheitsfixer/${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`;
-  await createBranch(repo, branch);
+  let branch: string | undefined;
+  if (!TROCKEN) {
+    branch = `sicherheitsfixer/${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`;
+    await createBranch(repo, branch);
+  }
 
   const angewendet: { finding: Finding; file: string; erklaerung: string }[] = [];
 
@@ -88,24 +93,35 @@ async function fixLauf(repo: string): Promise<void> {
     const vorschlag = await proposeFix(f, original, { apiKey: key, model: MODELL });
     if (!vorschlag) {
       await audit({ aktion: "kein-vorschlag", befund: f.rule, datei: f.file });
+      console.log(`– ${f.id} ${f.rule}: kein sicherer Vorschlag`);
       continue;
     }
 
+    const vorherAnzahl = countSame(roh, f);
     await writeFile(pfad, vorschlag.newContent, "utf8");
-    const urteil = await verifyFix(repo, f, SEMGREP_CONFIG);
-    await audit({ aktion: "pruefung", befund: f.rule, datei: f.file, bestanden: urteil.ok, gruende: urteil.reasons });
+    const urteil = await verifyFix(repo, f, SEMGREP_CONFIG, vorherAnzahl);
+    await audit({ aktion: "pruefung", befund: f.rule, datei: f.file, bestanden: urteil.ok, gruende: urteil.reasons, trocken: TROCKEN });
 
     if (urteil.ok) {
       angewendet.push({ finding: f, file: f.file!, erklaerung: vorschlag.explanation });
       console.log(`✅ ${f.id} ${f.rule} in ${f.file}`);
     } else {
-      await writeFile(pfad, original, "utf8");
       console.log(`❌ ${f.id} verworfen: ${urteil.reasons.join(", ")}`);
     }
+
+    // Im Trockenlauf wird jede Änderung nach der Prüfung zurückgenommen.
+    // Bei einem echten Lauf bleibt sie bestehen, wenn sie bestanden hat.
+    if (!urteil.ok || TROCKEN) await writeFile(pfad, original, "utf8");
   }
 
   if (angewendet.length === 0) {
-    console.log("Keine Korrektur hat die Prüfung bestanden. Der Branch bleibt unverändert.");
+    console.log("Keine Korrektur hat die Prüfung bestanden.");
+    return;
+  }
+
+  if (TROCKEN) {
+    console.log(`\nTrockenlauf: ${angewendet.length} Korrektur(en) wären möglich. Es wurde nichts gespeichert.`);
+    for (const a of angewendet) console.log(`- ${a.finding.id}: ${a.erklaerung}`);
     return;
   }
 
