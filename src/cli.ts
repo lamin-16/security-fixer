@@ -29,7 +29,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.3.0
+  console.log(`Sicherheitsfixer 0.4.0
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -72,11 +72,11 @@ async function fixLauf(repo: string): Promise<void> {
 
   const { findings: roh } = await scanAll(repo, SEMGREP_CONFIG);
   const kandidaten: Finding[] = triage(roh, MIN)
-    .filter((f) => f.source === "semgrep" && f.file)
+    .filter((f) => (f.source === "semgrep" || f.source === "eslint") && f.file)
     .slice(0, MAX);
 
   if (kandidaten.length === 0) {
-    console.log("Keine automatisch korrigierbaren Befunde. Automatisch korrigiert werden nur Semgrep-Befunde mit Datei.");
+    console.log("Keine automatisch korrigierbaren Befunde. Automatisch korrigiert werden nur Befunde von ESLint und Semgrep mit Datei.");
     return;
   }
 

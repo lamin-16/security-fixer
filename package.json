@@ -1,6 +1,6 @@
 {
   "name": "sicherheitsfixer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Findet Sicherheitslücken in TypeScript-Projekten und schlägt geprüfte Korrekturen vor.",
   "type": "module",
   "bin": { "sicherheitsfixer": "dist/cli.js" },
@@ -11,8 +11,14 @@
     "test": "node --import tsx --test test/*.test.ts"
   },
   "engines": { "node": ">=20" },
-  "keywords": ["security", "sast", "semgrep", "typescript", "auto-fix"],
+  "keywords": ["security", "sast", "eslint", "semgrep", "typescript", "auto-fix"],
   "license": "MIT",
+  "dependencies": {
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-no-unsanitized": "^4.1.0",
+    "eslint-plugin-security": "^3.0.0"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",

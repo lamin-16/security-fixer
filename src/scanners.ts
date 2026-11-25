@@ -2,6 +2,8 @@ import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { runEslint } from "./eslint-scan.js";
+import { CONFIG_DATEI, filterExcluded, loadAusschluss } from "./config.js";
 import { fingerprint, parseSarif } from "./sarif.js";
 import type { Finding, Severity } from "./types.js";
 
@@ -88,13 +90,17 @@ export async function runGitleaks(dir: string): Promise<Finding[]> {
   }
 }
 
-/** Führt alle Scanner aus. Fehlt ein Werkzeug, wird nur ein Hinweis erzeugt. */
+/**
+ * Führt alle Scanner aus, wendet die Ausschlüsse aus .sicherheitsfixer.json an.
+ * Fehlt ein Werkzeug, wird nur ein Hinweis erzeugt.
+ */
 export async function scanAll(dir: string, semgrepConfig: string): Promise<ScanResult> {
   const findings: Finding[] = [];
   const warnings: string[] = [];
 
   const steps: [string, () => Promise<Finding[]>][] = [
     ["semgrep", () => runSemgrep(dir, semgrepConfig)],
+    ["eslint", () => runEslint(dir)],
     ["npm-audit", () => runNpmAudit(dir)],
     ["gitleaks", () => runGitleaks(dir)],
   ];
@@ -106,5 +112,12 @@ export async function scanAll(dir: string, semgrepConfig: string): Promise<ScanR
       warnings.push(`${name} übersprungen: ${(e as Error).message}`);
     }
   }
-  return { findings, warnings };
+
+  const regeln = await loadAusschluss(dir);
+  const { behalten, ausgeschlossen } = filterExcluded(findings, regeln);
+  if (ausgeschlossen > 0) {
+    warnings.push(`${ausgeschlossen} Befunde durch ${CONFIG_DATEI} ausgeschlossen`);
+  }
+
+  return { findings: behalten, warnings };
 }

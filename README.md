@@ -130,6 +130,24 @@ Dieses Tool ist bewusst eingeschränkt. Diese Grenzen sind Teil der Konstruktion
 - **Datenschutz.** Der Inhalt der betroffenen Datei wird an die Anthropic-API gesendet. Verarbeiten Sie keine Dateien mit Geheimnissen, Kundendaten oder vertraulichem Code, bevor Sie geprüft haben, ob das zulässig ist.
 - **Keine Garantie.** Auch geprüfte Korrekturen müssen Sie lesen, bevor Sie sie übernehmen.
 
+## Ausschlüsse und Fehlalarme
+
+Testdaten und Beispielschlüssel lösen oft Fehlalarme aus. Legen Sie dafür im Wurzelverzeichnis des Projekts eine Datei `.sicherheitsfixer.json` an:
+
+```json
+{
+  "ausschliessen": [
+    { "muster": "test/**", "grund": "Testdaten ohne echte Zugangsdaten" },
+    { "muster": "**/*.spec.ts", "grund": "Unit-Tests mit Dummy-Werten" }
+  ]
+}
+```
+
+Jeder Eintrag braucht ein `muster` (Glob) und einen `grund`. Ohne Begründung bricht das Tool ab. Ausgeschlossene Befunde werden im Bericht gezählt, damit Ausschlüsse nachvollziehbar bleiben.
+
+Der Scanner `eslint` prüft TypeScript- und JavaScript-Dateien auf typische Schwachstellen, etwa unsichere Dateipfade, dynamische Ausführung und unsichere DOM-Zuweisungen. Er ergänzt Semgrep und ersetzt es nicht.
+
+
 ## Konfiguration
 
 | Option / Variable | Standard | Wirkung |
@@ -194,6 +212,14 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 [MIT](LICENSE)
 
 ## Changelog
+
+### 0.4.0
+- Neuer Haupt-Scanner: ESLint mit Sicherheitsregeln. Er läuft vollständig in Node.js und braucht keinen Build auf dem Gerät.
+- Semgrep ist optional. Fehlt es, steht ein Hinweis im Bericht.
+- Automatische Korrekturen beschränken sich weiterhin auf Semgrep-Befunde.
+- Laute Regeln mit vielen Fehlalarmen sind deaktiviert.
+- Ausschlüsse über `.sicherheitsfixer.json`. Jeder Eintrag braucht ein Muster und eine Begründung.
+- Ausgeschlossene Befunde werden im Bericht gezählt, damit Ausschlüsse sichtbar bleiben.
 
 ### 0.3.0
 - Agenten-Modus mit `--agenten`: unabhängiger Reviewer prüft jede Korrektur.
