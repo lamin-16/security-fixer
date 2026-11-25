@@ -213,6 +213,11 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.4.2
+- Mehrfachmeldungen derselben Stelle aus verschiedenen ESLint-Regeln erscheinen als ein Befund, mit allen Regeln aufgelistet.
+- Der Bericht enthält eine Übersicht der Befunde nach Quelle.
+- Die Anleitung für Juice Shop zeigt, wie Übungsdateien und Testdaten ausgeschlossen werden.
+
 ### 0.4.1
 - Neue Regeln für SQL-Injection (`sicherheit/sql-injection`) und XSS (`sicherheit/xss-dom`, `sicherheit/xss-reflected`).
 - Konfigurationsfehler von ESLint erscheinen nicht mehr als Sicherheitsbefunde.

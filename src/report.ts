@@ -15,6 +15,11 @@ export function berichtAlsMarkdown(findings: Finding[], warnings: string[], datu
     (s) => `- **${BEZ[s]}:** ${findings.filter((f) => f.severity === s).length}`,
   ).join("\n");
 
+  const quellen = [...new Set(findings.map((f) => f.source))].sort();
+  const nachQuelle = quellen.length
+    ? quellen.map((q) => `- \`${q}\`: ${findings.filter((f) => f.source === q).length}`).join("\n")
+    : "Keine Befunde.";
+
   const zeilen = findings.map((f) => {
     const ort = f.file ? `${f.file}${f.line ? `:${f.line}` : ""}` : "–";
     const text = f.message.replace(/\|/g, "\\|").replace(/\n/g, " ");
@@ -37,6 +42,10 @@ export function berichtAlsMarkdown(findings: Finding[], warnings: string[], datu
     "## Zusammenfassung",
     "",
     zusammenfassung,
+    "",
+    "## Nach Quelle",
+    "",
+    nachQuelle,
     "",
     "## Befunde",
     "",
