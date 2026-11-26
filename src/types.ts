@@ -1,6 +1,6 @@
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
-export type FindingSource = "semgrep" | "eslint" | "npm-audit" | "gitleaks";
+export type FindingSource = "semgrep" | "eslint" | "npm-audit" | "gitleaks" | "web";
 
 export interface Finding {
   /** Laufende ID nach dem Sortieren, z. B. F-001 */

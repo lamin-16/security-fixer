@@ -9,6 +9,7 @@ import { reviewProposal } from "./agents.js";
 import { berichtAlsMarkdown } from "./report.js";
 import { berichtAlsSarif } from "./sarif-export.js";
 import { bewerte, berichtBenchmark, type Wahrheit } from "./benchmark.js";
+import { scanWeb } from "./passiv.js";
 import { scanAll } from "./scanners.js";
 import { triage } from "./triage.js";
 import { countSame, verifyFix } from "./verify.js";
@@ -31,7 +32,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.7.0
+  console.log(`Sicherheitsfixer 0.8.0
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -67,7 +68,7 @@ async function scanLauf(repo: string): Promise<void> {
 
   const sarifDatei = option("--sarif");
   if (sarifDatei) {
-    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.7.0"), null, 2), "utf8");
+    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.8.0"), null, 2), "utf8");
     console.log(`SARIF geschrieben: ${sarifDatei}`);
   }
 
@@ -203,11 +204,25 @@ async function benchmarkLauf(repo: string): Promise<void> {
   console.log(berichtBenchmark(bewerte(findings, wahrheit), new Date()));
 }
 
+async function webLauf(): Promise<void> {
+  if (!ziel) throw new Error("Bitte eine Adresse angeben, z. B. https://beispiel.de");
+  if (!args.includes("--ich-besitze-es")) {
+    throw new Error("Bestätigung fehlt. Fügen Sie --ich-besitze-es hinzu, wenn Ihnen diese Website gehört.");
+  }
+
+  const { findings, anfragen, warnings } = await scanWeb(ziel);
+  const befunde = triage(findings, "low");
+  const hinweise = [...warnings, `${anfragen} Anfragen gesendet (passiv, nur GET, keine Dateiinhalte gespeichert)`];
+  console.log(berichtAlsMarkdown(befunde, hinweise, new Date()));
+}
+
 async function main(): Promise<void> {
   if (!befehl || befehl === "--hilfe" || !ziel) {
     hilfe();
     return;
   }
+
+  if (befehl === "web") return webLauf();
 
   const repo = await assertRepo(ziel);
 

@@ -265,6 +265,11 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.8.0
+- Neuer Befehl `web <url> --ich-besitze-es`: passive Prüfung einer veröffentlichten Website.
+- Prüft Sicherheitsheader, Cookie-Flags, Source-Map-Verweise, fest eingebettete Schlüssel in Skripten und öffentlich abrufbare Dateien wie `.env`.
+- Nur GET-Anfragen, nur dieselbe Herkunft, höchstens 20 Anfragen mit Pause. Dateiinhalte werden nicht gespeichert.
+
 ### 0.7.0
 - Neuer Befehl `benchmark`: misst Trefferquote und Präzision gegen eine Liste bekannter Schwachstellen.
 - Mit einer kleinen Wahrheitsliste sind die Zahlen nicht aussagekräftig. Die Liste muss vollständig geprüft werden.
