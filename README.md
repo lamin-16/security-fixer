@@ -265,6 +265,11 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.9.0
+- Tiefe passive Prüfung mit `web <url> --ich-besitze-es --tief`: folgt internen Links und prüft bis zu 8 Seiten.
+- Neue Prüfungen: gemischte Inhalte (http auf https), Anmeldeformulare über http, Skripte ohne Subresource Integrity, Anzahl gesperrter Pfade in robots.txt.
+- Aktive Tests wie Eingabe-Injektion sind bewusst nicht enthalten.
+
 ### 0.8.0
 - Neuer Befehl `web <url> --ich-besitze-es`: passive Prüfung einer veröffentlichten Website.
 - Prüft Sicherheitsheader, Cookie-Flags, Source-Map-Verweise, fest eingebettete Schlüssel in Skripten und öffentlich abrufbare Dateien wie `.env`.
