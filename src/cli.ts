@@ -33,7 +33,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.9.1
+  console.log(`Sicherheitsfixer 0.10.0
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -45,6 +45,7 @@ Optionen:
   --sarif <datei>          Befunde als SARIF 2.1.0 schreiben (nur scan)
   --json <datei>           Befunde als JSON schreiben (nur scan)
   --fehler-ab <stufe>      Exit-Code 1, wenn Befunde ab dieser Stufe vorliegen (nur scan)
+  --alle-dateien           Auch nicht versionierte Dateien prüfen (nur scan)
   --max <zahl>             Maximale Anzahl Korrekturen (nur fix, Standard: 5)
   --modell <name>          Modell für Korrekturen (nur fix)
   --semgrep-config <cfg>   Semgrep-Regelsatz (Standard: p/typescript)
@@ -57,7 +58,7 @@ Umgebung:
 }
 
 async function scanLauf(repo: string): Promise<void> {
-  const { findings: roh, warnings } = await scanAll(repo, SEMGREP_CONFIG);
+  const { findings: roh, warnings } = await scanAll(repo, SEMGREP_CONFIG, !args.includes("--alle-dateien"));
   const findings = triage(roh, MIN);
   await audit({ aktion: "scan", repo, befunde: findings.length });
 
@@ -69,7 +70,7 @@ async function scanLauf(repo: string): Promise<void> {
 
   const sarifDatei = option("--sarif");
   if (sarifDatei) {
-    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.9.1"), null, 2), "utf8");
+    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.10.0"), null, 2), "utf8");
     console.log(`SARIF geschrieben: ${sarifDatei}`);
   }
 

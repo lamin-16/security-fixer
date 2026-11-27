@@ -6,6 +6,7 @@ import { runEslint } from "./eslint-scan.js";
 import { CONFIG_DATEI, filterExcluded, loadAusschluss } from "./config.js";
 import { fingerprint, parseSarif } from "./sarif.js";
 import { filterInline } from "./suppress.js";
+import { filterPlatzhalter, nurVersioniert, versionierteDateien } from "./versioniert.js";
 import type { Finding, Severity } from "./types.js";
 
 export interface ScanResult {
@@ -95,7 +96,11 @@ export async function runGitleaks(dir: string): Promise<Finding[]> {
  * Führt alle Scanner aus, wendet die Ausschlüsse aus .sicherheitsfixer.json an.
  * Fehlt ein Werkzeug, wird nur ein Hinweis erzeugt.
  */
-export async function scanAll(dir: string, semgrepConfig: string): Promise<ScanResult> {
+export async function scanAll(
+  dir: string,
+  semgrepConfig: string,
+  nurVersioniertFlag = true,
+): Promise<ScanResult> {
   const findings: Finding[] = [];
   const warnings: string[] = [];
 
@@ -114,8 +119,29 @@ export async function scanAll(dir: string, semgrepConfig: string): Promise<ScanR
     }
   }
 
+  let geprueft = findings;
+
+  if (nurVersioniertFlag) {
+    const dateien = await versionierteDateien(dir);
+    if (dateien) {
+      const { behalten, entfernt } = nurVersioniert(geprueft, dateien);
+      geprueft = behalten;
+      if (entfernt > 0) {
+        warnings.push(`${entfernt} Befunde in nicht versionierten Dateien übersprungen`);
+      }
+    } else {
+      warnings.push("Versionierte Dateien konnten nicht ermittelt werden. Alle Dateien wurden geprüft.");
+    }
+  }
+
+  const platzhalter = await filterPlatzhalter(geprueft, dir);
+  geprueft = platzhalter.behalten;
+  if (platzhalter.entfernt > 0) {
+    warnings.push(`${platzhalter.entfernt} Treffer als Platzhalter erkannt und ausgelassen`);
+  }
+
   const regeln = await loadAusschluss(dir);
-  const { behalten: ohneAusschluss, ausgeschlossen } = filterExcluded(findings, regeln);
+  const { behalten: ohneAusschluss, ausgeschlossen } = filterExcluded(geprueft, regeln);
   if (ausgeschlossen > 0) {
     warnings.push(`${ausgeschlossen} Befunde durch ${CONFIG_DATEI} ausgeschlossen`);
   }

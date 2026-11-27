@@ -265,6 +265,11 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.10.0
+- Standardmäßig werden nur Dateien geprüft, die Git verfolgt. Das entspricht dem Stand, der auf GitHub landen würde. Mit `--alle-dateien` werden auch neue, noch nicht hinzugefügte Dateien geprüft.
+- Schlüssel-Treffer in Zeilen mit Platzhaltern (`xxx`, `YOUR_`, `<...>`, `example`) werden nicht mehr gemeldet. Die Anzahl erscheint im Bericht.
+- Noch offen: Erkennung von `hasLocale`-Prüfungen als sichere Muster.
+
 ### 0.9.1
 - Build-Ausgaben und archivierte Versionen (`.next`, `.turbo`, `out`, `releases`) werden standardmäßig nicht mehr geprüft.
 - Der Bericht der tiefen Web-Prüfung nennt die Anzahl der geprüften Seiten.
