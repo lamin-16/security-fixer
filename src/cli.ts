@@ -33,7 +33,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.9.0
+  console.log(`Sicherheitsfixer 0.9.1
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -69,7 +69,7 @@ async function scanLauf(repo: string): Promise<void> {
 
   const sarifDatei = option("--sarif");
   if (sarifDatei) {
-    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.9.0"), null, 2), "utf8");
+    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.9.1"), null, 2), "utf8");
     console.log(`SARIF geschrieben: ${sarifDatei}`);
   }
 
@@ -212,10 +212,12 @@ async function webLauf(): Promise<void> {
   }
 
   const tief = args.includes("--tief");
-  const { findings, anfragen, warnings } = tief ? await scanWebTief(ziel) : await scanWeb(ziel);
+  const ergebnis = tief ? await scanWebTief(ziel) : await scanWeb(ziel);
+  const { findings, anfragen, warnings } = ergebnis;
   const befunde = triage(findings, "low");
   const modus = tief ? "tiefe passive Prüfung" : "passive Prüfung";
-  const hinweise = [...warnings, `${modus}: ${anfragen} Anfragen gesendet (nur GET, keine Dateiinhalte gespeichert)`];
+  const seiten = "seiten" in ergebnis ? `, ${ergebnis.seiten} Seiten geprüft` : "";
+  const hinweise = [...warnings, `${modus}: ${anfragen} Anfragen gesendet${seiten} (nur GET, keine Dateiinhalte gespeichert)`];
   console.log(berichtAlsMarkdown(befunde, hinweise, new Date()));
 }
 

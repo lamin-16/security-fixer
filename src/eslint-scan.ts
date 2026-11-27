@@ -16,6 +16,10 @@ import type { Finding } from "./types.js";
 const IGNORIERT = [
   "**/node_modules/**",
   "**/dist/**",
+  "**/.next/**",
+  "**/.turbo/**",
+  "**/out/**",
+  "**/releases/**",
   "**/build/**",
   "**/coverage/**",
   "**/*.min.js",

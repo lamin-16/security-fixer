@@ -265,6 +265,11 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.9.1
+- Build-Ausgaben und archivierte Versionen (`.next`, `.turbo`, `out`, `releases`) werden standardmäßig nicht mehr geprüft.
+- Der Bericht der tiefen Web-Prüfung nennt die Anzahl der geprüften Seiten.
+- Korrekte Einzahl und Mehrzahl bei gesperrten Pfaden in robots.txt.
+
 ### 0.9.0
 - Tiefe passive Prüfung mit `web <url> --ich-besitze-es --tief`: folgt internen Links und prüft bis zu 8 Seiten.
 - Neue Prüfungen: gemischte Inhalte (http auf https), Anmeldeformulare über http, Skripte ohne Subresource Integrity, Anzahl gesperrter Pfade in robots.txt.

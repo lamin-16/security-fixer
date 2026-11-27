@@ -88,7 +88,7 @@ export function pruefeRobots(text: string, base: string): Finding[] {
     .split(/\r?\n/)
     .filter((z) => /^\s*disallow:/i.test(z) && (z.split(":")[1] ?? "").trim() !== "");
   return eintraege.length > 0
-    ? [befund("web/robots-disallow", "low", `robots.txt nennt ${eintraege.length} gesperrte Pfade. Diese Liste ist öffentlich einsehbar.`, `${base}robots.txt`)]
+    ? [befund("web/robots-disallow", "low", `robots.txt nennt ${eintraege.length} ${eintraege.length === 1 ? "gesperrten Pfad" : "gesperrte Pfade"}. Diese Liste ist öffentlich einsehbar.`, `${base}robots.txt`)]
     : [];
 }
 
