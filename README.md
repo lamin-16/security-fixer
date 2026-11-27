@@ -1,4 +1,5 @@
 <p align="center">
+
   <img src="assets/banner.svg" alt="Sicherheitsfixer" width="100%" />
 </p>
 
@@ -15,6 +16,8 @@
 <p align="center"><b>Findet Sicherheitslücken in TypeScript-Projekten und schlägt geprüfte Korrekturen vor. Ohne Ihre Zustimmung wird nichts committet.</b></p>
 
 ---
+
+> English documentation: [README.en.md](README.en.md) · Security policy: [SECURITY.md](SECURITY.md)
 
 ## Inhalt
 
@@ -264,6 +267,10 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 [MIT](LICENSE)
 
 ## Changelog
+
+### 0.11.3
+- Dokumentation: englische README (`README.en.md`), Sicherheitsrichtlinie (`SECURITY.md`) und Regelbeschreibung mit Beispielen und bekannten Grenzen (`docs/regeln.md`).
+- Keine Änderung am Programmcode.
 
 ### 0.11.2
 - Neuer End-to-End-Test: Der echte Scanner läuft auf drei Dateien, eine ungesichert, eine mit falschem Wert, eine korrekt geprüft. So wird die gesamte Kette getestet, nicht nur die einzelne Regel.
