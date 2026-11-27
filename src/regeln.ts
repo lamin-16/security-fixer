@@ -123,10 +123,69 @@ const xssReflected: Rule.RuleModule = {
   },
 };
 
-export const sicherheitsPlugin = {
+export const sicherheitsPlugin: { rules: Record<string, Rule.RuleModule> } = {
   rules: {
     "sql-injection": sqlInjection,
     "xss-dom": xssDom,
     "xss-reflected": xssReflected,
   },
 };
+
+/**
+ * Stellen mit einem dynamischen Import, dessen Wert vorher geprüft wurde.
+ * Schlüssel: absoluter Dateipfad, Wert: Zeilen. Wird vor jedem Lauf geleert.
+ */
+export const gesicherteImporte = new Map<string, Set<number>>();
+
+function findeVariable(context: Rule.RuleContext, node: any, name: string): any {
+  const quelle = (context as any).sourceCode ?? (context as any).getSourceCode();
+  let scope = quelle.getScope(node);
+  while (scope) {
+    const v = scope.set.get(name);
+    if (v) return v;
+    scope = scope.upper;
+  }
+  return null;
+}
+
+/** Eine Bedingung gilt als Prüfung, wenn sie hasLocale(...) oder .includes(...) aufruft. */
+function istPruefung(test: any): boolean {
+  if (!test || test.type !== "CallExpression") return false;
+  const c = test.callee;
+  if (c.type === "Identifier" && c.name === "hasLocale") return true;
+  if (c.type === "MemberExpression" && c.property.type === "Identifier" && c.property.name === "includes") return true;
+  return false;
+}
+
+/** Ein Identifier ist gesichert, wenn er eine const-Variable mit geprüftem Wert ist. */
+function istGesicherterIdentifier(context: Rule.RuleContext, node: any, name: string): boolean {
+  const v = findeVariable(context, node, name);
+  if (!v || v.defs.length !== 1) return false;
+  const def = v.defs[0];
+  if (def.type !== "Variable" || def.parent?.kind !== "const") return false;
+  const init = def.node?.init;
+  return init?.type === "ConditionalExpression" && istPruefung(init.test);
+}
+
+const gesicherterImport: Rule.RuleModule = {
+  meta: { type: "suggestion", docs: { description: "Dynamischer Import mit geprüftem Wert" }, schema: [] },
+  create(context) {
+    return {
+      ImportExpression(node: any) {
+        const quelle = node.source;
+        if (!quelle || quelle.type !== "TemplateLiteral" || quelle.expressions.length === 0) return;
+        const alleGesichert = quelle.expressions.every(
+          (e: any) => e.type === "Identifier" && istGesicherterIdentifier(context, node, e.name),
+        );
+        if (!alleGesichert) return;
+
+        const datei = context.filename;
+        if (!gesicherteImporte.has(datei)) gesicherteImporte.set(datei, new Set());
+        gesicherteImporte.get(datei)!.add(node.loc.start.line);
+      },
+    };
+  },
+};
+
+
+sicherheitsPlugin.rules["gesicherter-import"] = gesicherterImport;

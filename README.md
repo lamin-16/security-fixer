@@ -265,6 +265,10 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.11.0
+- Neue Regel `sicherheit/gesicherter-import`: erkennt dynamische Importe, deren Wert vorher über `hasLocale(...)` oder `.includes(...)` geprüft wurde. Die zugehörige Meldung von `no-unsanitized` entfällt dann.
+- Die Erkennung arbeitet am Syntaxbaum. Nur `const`-Variablen mit geprüfter Bedingung gelten als gesichert. Alle anderen Importe bleiben gemeldet.
+
 ### 0.10.0
 - Standardmäßig werden nur Dateien geprüft, die Git verfolgt. Das entspricht dem Stand, der auf GitHub landen würde. Mit `--alle-dateien` werden auch neue, noch nicht hinzugefügte Dateien geprüft.
 - Schlüssel-Treffer in Zeilen mit Platzhaltern (`xxx`, `YOUR_`, `<...>`, `example`) werden nicht mehr gemeldet. Die Anzahl erscheint im Bericht.

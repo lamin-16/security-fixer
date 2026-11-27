@@ -4,7 +4,7 @@ import security from "eslint-plugin-security";
 import noUnsanitized from "eslint-plugin-no-unsanitized";
 import { relative } from "node:path";
 import { fingerprint } from "./sarif.js";
-import { sicherheitsPlugin } from "./regeln.js";
+import { gesicherteImporte, sicherheitsPlugin } from "./regeln.js";
 import type { Finding } from "./types.js";
 
 /**
@@ -61,6 +61,7 @@ export function buildConfig(): Linter.Config[] {
         "sicherheit/sql-injection": "error",
         "sicherheit/xss-dom": "error",
         "sicherheit/xss-reflected": "error",
+        "sicherheit/gesicherter-import": "error",
       },
     },
   ];
@@ -70,7 +71,11 @@ export function buildConfig(): Linter.Config[] {
 const KONFIG_FEHLER = /Definition for rule '.+' was not found/;
 
 /** Wandelt ESLint-Ergebnisse in normalisierte Befunde um. Reine Funktion, daher testbar. */
-export function eslintResultsToFindings(results: ESLint.LintResult[], dir: string): Finding[] {
+export function eslintResultsToFindings(
+  results: ESLint.LintResult[],
+  dir: string,
+  gesichert: Map<string, Set<number>> = new Map(),
+): Finding[] {
   const befunde: Finding[] = [];
 
   for (const r of results) {
@@ -80,6 +85,8 @@ export function eslintResultsToFindings(results: ESLint.LintResult[], dir: strin
       if (!m.ruleId) continue;
       // Fehler in der Konfiguration der geprüften Datei sind keine Ergebnisse.
       if (KONFIG_FEHLER.test(m.message)) continue;
+      // Dynamischer Import, dessen Wert vorher gegen eine feste Liste geprüft wurde.
+      if (m.message.includes("to import") && gesichert.get(r.filePath)?.has(m.line ?? -1)) continue;
 
       befunde.push({
         id: "",
@@ -103,6 +110,7 @@ export async function runEslint(dir: string): Promise<Finding[]> {
     overrideConfig: buildConfig(),
     errorOnUnmatchedPattern: false,
   });
+  gesicherteImporte.clear();
   const results = await eslint.lintFiles(["."]);
-  return eslintResultsToFindings(results, dir);
+  return eslintResultsToFindings(results, dir, gesicherteImporte);
 }
