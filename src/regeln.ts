@@ -157,6 +157,11 @@ function istPruefung(test: any): boolean {
   return false;
 }
 
+/** Namen der Variablen, die in der Prüfung als Argument übergeben werden. */
+function geprueftePfadNamen(test: any): string[] {
+  return test.arguments.filter((a: any) => a.type === "Identifier").map((a: any) => a.name);
+}
+
 /** Ein Identifier ist gesichert, wenn er eine const-Variable mit geprüftem Wert ist. */
 function istGesicherterIdentifier(context: Rule.RuleContext, node: any, name: string): boolean {
   const v = findeVariable(context, node, name);
@@ -164,7 +169,18 @@ function istGesicherterIdentifier(context: Rule.RuleContext, node: any, name: st
   const def = v.defs[0];
   if (def.type !== "Variable" || def.parent?.kind !== "const") return false;
   const init = def.node?.init;
-  return init?.type === "ConditionalExpression" && istPruefung(init.test);
+  if (init?.type !== "ConditionalExpression" || !istPruefung(init.test)) return false;
+
+  // Der Wert im gewählten Zweig muss derselbe sein, der geprüft wurde.
+  // Der Ausweichwert muss eine feste Angabe sein.
+  const geprueft = geprueftePfadNamen(init.test);
+  const gewaehlt = init.consequent;
+  const ausweich = init.alternate;
+  return (
+    gewaehlt.type === "Identifier" &&
+    geprueft.includes(gewaehlt.name) &&
+    (ausweich.type === "Literal" || ausweich.type === "MemberExpression")
+  );
 }
 
 const gesicherterImport: Rule.RuleModule = {

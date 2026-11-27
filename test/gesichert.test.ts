@@ -65,3 +65,27 @@ test("ungesicherter Import bleibt als Befund erhalten", () => {
   ] as any;
   assert.equal(eslintResultsToFindings(results, "/tmp/repo", new Map()).length, 1);
 });
+
+test("Prüfung auf einen anderen Wert als den verwendeten gilt nicht als gesichert", () => {
+  gesicherteImporte.clear();
+  const fehlerhaft = `
+const erlaubt = ['de', 'en'];
+export async function laden(sprache, roh) {
+  const locale = erlaubt.includes(sprache) ? roh : 'de';
+  return (await import(\`../messages/\${locale}.json\`)).default;
+}`;
+  linter.verify(fehlerhaft, config as any, "fehlerhaft.js");
+  assert.equal(gesicherteImporte.get("fehlerhaft.js")?.has(5) ?? false, false);
+});
+
+test("Prüfung auf den verwendeten Wert gilt als gesichert", () => {
+  gesicherteImporte.clear();
+  const korrekt = `
+const erlaubt = ['de', 'en'];
+export async function laden(sprache) {
+  const locale = erlaubt.includes(sprache) ? sprache : 'de';
+  return (await import(\`../messages/\${locale}.json\`)).default;
+}`;
+  linter.verify(korrekt, config as any, "korrekt.js");
+  assert.ok(gesicherteImporte.get("korrekt.js")?.has(5));
+});

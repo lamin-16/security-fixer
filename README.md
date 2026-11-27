@@ -265,6 +265,10 @@ Beiträge sind willkommen. Bitte öffnen Sie zuerst ein Issue, wenn Sie etwas Gr
 
 ## Changelog
 
+### 0.11.1
+- Behoben: Die Regel `gesicherter-import` galt eine Prüfung als sicher, auch wenn sie einen anderen Wert prüfte als den, der im Import verwendet wird. Eine solche Stelle wird nun gemeldet.
+- Der Ausweichwert muss eine feste Angabe sein, etwa ein Textliteral oder eine Eigenschaft wie `routing.defaultLocale`.
+
 ### 0.11.0
 - Neue Regel `sicherheit/gesicherter-import`: erkennt dynamische Importe, deren Wert vorher über `hasLocale(...)` oder `.includes(...)` geprüft wurde. Die zugehörige Meldung von `no-unsanitized` entfällt dann.
 - Die Erkennung arbeitet am Syntaxbaum. Nur `const`-Variablen mit geprüfter Bedingung gelten als gesichert. Alle anderen Importe bleiben gemeldet.

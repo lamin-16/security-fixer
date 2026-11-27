@@ -33,7 +33,7 @@ const TROCKEN = args.includes("--trocken");
 const AGENTEN = args.includes("--agenten");
 
 function hilfe(): void {
-  console.log(`Sicherheitsfixer 0.11.0
+  console.log(`Sicherheitsfixer 0.11.1
 
 Befehle:
   scan <repo>   Scannt ein Repository und erstellt einen Bericht
@@ -70,7 +70,7 @@ async function scanLauf(repo: string): Promise<void> {
 
   const sarifDatei = option("--sarif");
   if (sarifDatei) {
-    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.11.0"), null, 2), "utf8");
+    await writeFile(sarifDatei, JSON.stringify(berichtAlsSarif(findings, "0.11.1"), null, 2), "utf8");
     console.log(`SARIF geschrieben: ${sarifDatei}`);
   }
 
